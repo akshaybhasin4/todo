@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# To-Do — Manage What To Do
 
-## Getting Started
+A mobile-first to-do app built with **Next.js (App Router)**, **JavaScript** and **Tailwind CSS**.
+The same Next.js project serves both the UI and the REST API, so it deploys to Vercel as-is.
 
-First, run the development server:
+## Screens
+
+| Route     | What it does |
+|-----------|--------------|
+| `/`       | Onboarding ("Get Started"; skipped automatically on later visits) |
+| `/home`   | Search bar, Mon–Sun day strip (swipe/drag sideways to change week), Task Complete / Task Pending cards, Weekly Progress, tasks for the selected day, + button |
+| `/search` | Keyword search over title and description; tap a task to view/edit, swipe left to delete |
+| `/weeks`  | All tasks grouped by week (Mon–Sun) with open vs completed counts; tap a week to expand it |
+
+Creating and editing use the **Add New Task** bottom sheet (title, start/end time, date, priority, description; status when editing).
+Tick the checkbox to switch a task between *In Progress* and *Completed*. Delete with the trash icon or by swiping a row left (with Undo).
+
+## API
+
+| Method | Path | Body / query |
+|--------|------|--------------|
+| GET    | `/api/tasks?q=keyword` | optional search |
+| POST   | `/api/tasks` | `{ title*, date*, startTime*, endTime, description, priority, status }` |
+| GET    | `/api/tasks/:id` | |
+| PATCH  | `/api/tasks/:id` | any subset of the fields above |
+| DELETE | `/api/tasks/:id` | |
+
+`date` is `YYYY-MM-DD`, times are `HH:MM`, `priority` is `low | medium | high | null`, `status` is `in_progress | completed`.
+Each browser gets an anonymous `todo_uid` cookie, so visitors only see their own tasks.
+
+## Database (MongoDB)
+
+Tasks are stored in MongoDB, in the `tasks` collection: one document per task, with `_id` = task id and a `uid`
+field for the visitor. The connection is configured with environment variables:
+
+| Variable      | Required | Example |
+|---------------|----------|---------|
+| `MONGODB_URI` | yes      | `mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority` |
+| `MONGODB_DB`  | no       | `todo` (default) |
+
+Locally these go in **`.env.local`** in the project root (git-ignored; `.env.example` is the template).
+
+**Free MongoDB Atlas setup:** create a free cluster at https://www.mongodb.com/cloud/atlas, then
+*Database Access* → add a user, *Network Access* → allow `0.0.0.0/0` (required for Vercel),
+*Connect → Drivers* → copy the connection string into `MONGODB_URI`, replacing `<password>`.
+
+## Run locally
 
 ```bash
+npm install
+# put your MONGODB_URI in .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push this folder to GitHub and import it in Vercel (framework preset: Next.js).
+2. In *Project → Settings → Environment Variables* add `MONGODB_URI` (and `MONGODB_DB` if you changed it),
+   or connect *MongoDB Atlas* from the Vercel Marketplace, which sets `MONGODB_URI` for you.
+3. Deploy (or redeploy if you added the variables after the first deploy).
